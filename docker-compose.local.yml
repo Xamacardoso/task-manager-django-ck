@@ -15,13 +15,13 @@ services:
       - redis
       - mailpit
     volumes:
-      - /app/.venv
       - .:/app:z
+      - /app/.venv
     env_file:
       - ./.envs/.local/.django
       - ./.envs/.local/.postgres
     ports:
-      - '8000:8000'
+      - "8000:8000"
     command: /start
 
   postgres:
@@ -30,6 +30,8 @@ services:
       dockerfile: ./compose/production/postgres/Dockerfile
     image: task_manager_production_postgres
     container_name: task_manager_local_postgres
+    ports:
+      - "5432:5432"
     volumes:
       - task_manager_local_postgres_data:/var/lib/postgresql/data
       - task_manager_local_postgres_data_backups:/backups
@@ -75,5 +77,5 @@ services:
     image: task_manager_local_flower
     container_name: task_manager_local_flower
     ports:
-      - '5555:5555'
+      - "5555:5555"
     command: /start-flower

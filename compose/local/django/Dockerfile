@@ -1,5 +1,5 @@
 # define an alias for the specific python version used in this file.
-FROM ghcr.io/astral-sh/uv:python3.14-bookworm-slim AS python
+FROM docker.io/python:3.10.15-slim-bookworm as python
 
 # Python build stage
 FROM python AS python-build-stage
@@ -20,18 +20,17 @@ RUN apt-get update && apt-get install --no-install-recommends -y \
   gettext \
   wait-for-it
 
-# Requirements are installed here to ensure they will be cached.
-RUN --mount=type=cache,target=/root/.cache/uv \
-    --mount=type=bind,source=pyproject.toml,target=pyproject.toml \
-    --mount=type=bind,source=uv.lock,target=uv.lock:rw \
-    uv sync --no-install-project
+# Copia a sua pasta de requirements para o container
+COPY ./requirements /requirements
+
+# Cria o ambiente virtual e instala as dependências via pip
+RUN python -m venv /app/.venv
+ENV PATH="/app/.venv/bin:$PATH"
+RUN pip install --upgrade pip && \
+    pip install --no-cache-dir -r /requirements/local.txt
 
 COPY . ${APP_HOME}
 
-RUN --mount=type=cache,target=/root/.cache/uv \
-    --mount=type=bind,source=pyproject.toml,target=pyproject.toml \
-    --mount=type=bind,source=uv.lock,target=uv.lock:rw \
-    uv sync
 
 # devcontainer dependencies and utils
 RUN apt-get update && apt-get install --no-install-recommends -y \
