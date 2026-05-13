@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% load crispy_forms_tags %}
+
+
+{% block title %}Criar Nova Tarefa{% endblock %}
+
+{% block content %}
+    <div class="container mt-4">
+        <h1>Criar Nova Tarefa</h1>
+
+        <div class="card mt-3">
+            <div class="card-body">
+                <form method="post">
+                    {% csrf_token %} 
+                    {{ form|crispy }} 
+
+                    <div class="mt-4">
+                        <button type="submit" class="btn btn-primary">Salvar Tarefa</button>
+                        <a href="{% url 'tasks:task_list' %}" class="btn btn-secondary">Cancelar</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+{% endblock content %}
