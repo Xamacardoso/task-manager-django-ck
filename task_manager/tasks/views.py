@@ -9,4 +9,4 @@ class TaskListView(LoginRequiredMixin, ListView):
 
     def get_queryset(self):
         # Apenas mostra as tarefas do usuário logado
-        return Task.objects.filter(user=self.request.user).order_by('created_at')    
+        return Task.objects.filter(user=self.request.user)   
