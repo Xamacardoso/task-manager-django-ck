@@ -2,11 +2,11 @@
 {% load crispy_forms_tags %}
 
 
-{% block title %}Criar Nova Tarefa{% endblock %}
+{% block title %}{{ form_title }}{% endblock %}
 
 {% block content %}
     <div class="container mt-4">
-        <h1>Criar Nova Tarefa</h1>
+        <h1>{{ form_title }}</h1>
 
         <div class="card mt-3">
             <div class="card-body">
@@ -15,7 +15,13 @@
                     {{ form|crispy }} 
 
                     <div class="mt-4">
-                        <button type="submit" class="btn btn-primary">Salvar Tarefa</button>
+                        <button type="submit" class="btn btn-primary">
+                            {% if object %}
+                                Atualizar Tarefa
+                            {% else %}
+                                Criar Tarefa
+                            {% endif %}
+                        </button>
                         <a href="{% url 'tasks:task_list' %}" class="btn btn-secondary">Cancelar</a>
                     </div>
                 </form>
