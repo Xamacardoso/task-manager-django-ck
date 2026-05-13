@@ -15,11 +15,14 @@ urlpatterns = [
     ),
     # Django Admin, use {% url 'admin:index' %}
     path(settings.ADMIN_URL, admin.site.urls),
+    
     # User management
     path("users/", include("task_manager.users.urls", namespace="users")),
     path("accounts/", include("allauth.urls")),
-    # Your stuff: custom urls includes go here
-    # ...
+
+    # Rotas de tarefas, namespace 'tasks' define que as rotas estão em task_manager/tasks/urls.py
+    path('tasks/', include('task_manager.tasks.urls', namespace='tasks')),
+
     # Media files
     *static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT),
 ]
