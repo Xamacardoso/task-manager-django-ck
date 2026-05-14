@@ -8,6 +8,19 @@
 <div class="container mt-4">
     <h1>Lista de Tarefas</h1>
 
+    <ul class="nav nav-tabs mb-3">
+        <li class="nav-item">
+            <a class="nav-link {% if current_filter == 'all' %}active{% endif %}" href="{% url 'tasks:task_list' %}">Todas as tarefas</a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link {% if current_filter == 'pending' %}active{% endif %}" href="{% url 'tasks:task_list' %}?status=pending">Pendentes</a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link {% if current_filter == 'completed' %}active{% endif %}" href="{% url 'tasks:task_list' %}?status=completed">Concluídas</a>
+        </li>
+    </ul>
+
+    <!--Lista de tarefas -->
     <div class="list-group mt-3">
         <!-- Input escondido com o token de segurança para o AJAX usar -->
         <input type="hidden" id="csrf_token_global" value="{{ csrf_token }}">
@@ -50,6 +63,7 @@
             </div>
         </div>
         
+        <!-- Modal de exclusão da tarefa -->
         <div class="modal fade" id="deleteModal{{ task.pk }}" tabindex="-1" aria-labelledby="deleteModalLabel{{ task.pk }}" aria-hidden="true">
             <div class="modal-dialog">
                 <div class="modal-content">

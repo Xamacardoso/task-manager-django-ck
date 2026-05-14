@@ -18,7 +18,23 @@ class TaskListView(LoginRequiredMixin, ListView):
 
     def get_queryset(self):
         # Apenas mostra as tarefas do usuário logado
-        return Task.objects.filter(user=self.request.user)   
+        queryset = Task.objects.filter(user=self.request.user)
+
+        # pega o query param ?status=pending ou ?status=completed
+        status = self.request.GET.get('status')
+
+        # aqui vai filtrar baseado no status
+        if status == 'pending':
+            queryset = queryset.filter(is_completed=False)
+        elif status == 'completed':
+            queryset = queryset.filter(is_completed=True)
+        
+        return queryset
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['current_filter'] = self.request.GET.get('status', 'all')
+        return context
 
 class TaskCreateView(LoginRequiredMixin, SuccessMessageMixin, CreateView):
     model = Task
@@ -99,3 +115,4 @@ class TaskToggleCompleteView(LoginRequiredMixin, View):
 
         messages.success(request, f'Tarefa marcada como {estado}!')
         return redirect('tasks:task_list')
+
