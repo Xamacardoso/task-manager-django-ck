@@ -104,17 +104,6 @@
     </nav>
   </div>
   <div class="container">
-    {% if messages %}
-      {% for message in messages %}
-        <div class="alert alert-dismissible {% if message.tags %}alert-{{ message.tags }}{% endif %}">
-          {{ message }}
-          <button type="button"
-                  class="btn-close"
-                  data-bs-dismiss="alert"
-                  aria-label="Close"></button>
-        </div>
-      {% endfor %}
-    {% endif %}
     {% block main %}
       {% block content %}
         <p>Use this document as a way to quick start any new project.</p>
@@ -137,5 +126,36 @@
     </script>
     {% endcomment %}
   {% endblock inline_javascript %}
+
+  <div class="toast-container position-fixed bottom-0 end-0 p-3" style="z-index: 1100;">
+  {% if messages %}
+    {% for message in messages %}
+      <div class="toast align-items-center text-white bg-{% if message.tags == 'error' %}danger{% else %}{{ message.tags }}{% endif %} border-0" role="alert" aria-live="assertive" aria-atomic="true">
+        <div class="d-flex">
+          <div class="toast-body">
+            {% if message.tags == 'success' %}<i class="fas fa-check-circle me-2"></i>{% endif %}
+            {{ message }}
+          </div>
+          <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Fechar"></button>
+        </div>
+      </div>
+    {% endfor %}
+  {% endif %}
+</div>
+
+<script>
+  document.addEventListener("DOMContentLoaded", function() {
+    // Seleciona todos os elementos com a classe .toast
+    var toastElList = [].slice.call(document.querySelectorAll('.toast'));
+    
+    // Inicializa cada um deles usando o Bootstrap e define o tempo para desaparecer (3000ms = 3 segundos)
+    var toastList = toastElList.map(function(toastEl) {
+      return new bootstrap.Toast(toastEl, { delay: 3000 });
+    });
+    
+    // Mostra todos os toasts presentes na página
+    toastList.forEach(toast => toast.show());
+  });
+</script>
 </body>
 </html>
