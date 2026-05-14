@@ -13,8 +13,9 @@ from .forms import TaskForm
 
 class TaskListView(LoginRequiredMixin, ListView):
     model = Task
-    template_name = 'tasks/task_list.html'  # define qual html que vai renderizar
-    context_object_name = 'tasks'           # serve para acessar o tasks no html "{% for task in tasks %}"
+    template_name = 'tasks/task_list.html'
+    context_object_name = 'tasks'
+    paginate_by = 6  # Numero de tarefas por página
 
     def get_queryset(self):
         # pega o query param ?status=pending ou ?status=completed

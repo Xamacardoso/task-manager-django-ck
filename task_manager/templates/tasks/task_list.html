@@ -112,6 +112,7 @@ document.addEventListener("DOMContentLoaded", function() {
             debounceTimer = setTimeout(() => {
                 const url = new URL(window.location.href);
                 url.searchParams.set('q', query);
+                url.searchParams.delete('page'); // Sempre volta para a primeira página ao pesquisar
                 if (status !== 'all') {
                     url.searchParams.set('status', status);
                 } else {
@@ -132,8 +133,8 @@ document.addEventListener("DOMContentLoaded", function() {
                     taskListContainer.innerHTML = html;
                     taskListContainer.style.opacity = '1';
                     
-                    // Re-vincula os eventos das checkboxes, pois o HTML foi substituído
-                    bindCheckboxEvents();
+                    // Re-vincula os eventos (embora agora usemos delegação, alguns scripts podem precisar)
+                    bindListEvents();
                     
                     // Atualiza a URL no navegador sem recarregar a página
                     window.history.pushState({}, '', url);
@@ -151,12 +152,13 @@ document.addEventListener("DOMContentLoaded", function() {
         });
     }
 
-    // Função para vincular eventos de checkbox (separada para ser re-chamada após o AJAX)
-    function bindCheckboxEvents() {
+    // Função para vincular eventos da lista (separada para ser re-chamada após o AJAX)
+    function bindListEvents() {
+        // --- EVENTOS DE CHECKBOX ---
         const checkboxes = document.querySelectorAll('.task-checkbox');
         checkboxes.forEach(checkbox => {
-            // Remove evento anterior para não duplicar se necessário (embora o elemento seja novo)
-            checkbox.addEventListener('change', function() {
+            // Remove evento anterior para não duplicar (se necessário)
+            checkbox.onchange = function() {
                 const url = this.getAttribute('data-url');
                 const taskId = this.getAttribute('data-task-id');
                 const isChecked = this.checked;
@@ -190,12 +192,45 @@ document.addEventListener("DOMContentLoaded", function() {
                     this.checked = !isChecked;
                     showDynamicToast('Erro de conexão ao atualizar a tarefa.', 'error');
                 });
-            });
+            };
+        });
+
+        // --- EVENTOS DE PAGINAÇÃO AJAX ---
+        const paginationLinks = document.querySelectorAll('.pagination-link');
+        paginationLinks.forEach(link => {
+            link.onclick = function(e) {
+                e.preventDefault();
+                const url = this.getAttribute('href');
+                
+                taskListContainer.style.opacity = '0.2';
+
+                fetch(url, {
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                })
+                .then(response => response.text())
+                .then(html => {
+                    taskListContainer.innerHTML = html;
+                    taskListContainer.style.opacity = '1';
+                    
+                    // Re-vincula os eventos para a nova página
+                    bindListEvents();
+                    
+                    // Atualiza a URL e rola para o topo da lista
+                    window.history.pushState({}, '', url);
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                })
+                .catch(error => {
+                    console.error('Erro na paginação:', error);
+                    taskListContainer.style.opacity = '1';
+                });
+            };
         });
     }
 
     // Inicializa os eventos na primeira carga
-    bindCheckboxEvents();
+    bindListEvents();
 });
 </script>
 {% endblock content %}
