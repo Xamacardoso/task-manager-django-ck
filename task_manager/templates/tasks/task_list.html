@@ -12,15 +12,15 @@
         <!-- esse for é usado para percorrer a lista de tarefas, que vem de TaskListView no arquivo views.py. o nome tasks vem do objeto 'context' retornado no get_context_data -->
         {% for task in tasks %}
         <div class="list-group-item d-flex justify-content-between align-items-center">
-            <div class="d-flex w-100 justify-content-between">
+            <div>
                 <a href="{% url 'tasks:task_update' task.pk %}" class="text-decoration-none">
                     <h5 class="mb-1">{{ task.title }}</h5>
                 </a>
                 <small class="text-muted">Prazo: {{ task.due_date|date:"d/m/Y"|default:"Sem Prazo" }}</small>
+                <p class="mb-1">{{ task.description }}</p>
             </div>
-            <p class="mb-1">{{ task.description }}</p>
 
-            <div class="d-flex gap-2">
+            <div>
                 {% if task.is_completed %}
                     <span class="badge bg-success rounded-pill">Concluída</span>
                 {% else %}
@@ -33,12 +33,36 @@
             </div>
         </div>
         
+        <div class="modal fade" id="deleteModal{{ task.pk }}" tabindex="-1" aria-labelledby="deleteModalLabel{{ task.pk }}" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="deleteModalLabel{{ task.pk }}">Deletar Tarefa</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        Tem certeza de que deseja excluir a tarefa <strong>"{{ task.title }}"</strong>?
+                        Esta ação não pode ser desfeita.
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        
+                        <form action="{% url 'tasks:task_delete' task.pk %}" method="POST">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-danger">Deletar</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <!-- aqui adiciona o botão de criar nova tarefa -->
+        {% empty %}
+        <div class="alert alert-info">Você ainda não tem nenhuma tarefa. Que tal criar uma?</div>
+        {% endfor %}
+
         <div class="mt-4">
             <a href="{% url 'tasks:task_create' %}" class="btn btn-primary">Criar Nova Tarefa</a>
         </div>
-        {% empty %}
-            <div class="alert alert-info">Você ainda não tem nenhuma tarefa. Que tal criar uma?</div>
-        {% endfor %}
 </div>
 {% endblock content %}
