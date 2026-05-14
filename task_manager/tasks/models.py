@@ -1,7 +1,31 @@
 from django.conf import settings
 from django.db import models
 from django.utils import timezone
+from django.db.models import Q
+
 from model_utils.models import TimeStampedModel
+
+# queryset customizado para adicionar logica de busca e filtro sem sobrecarregar a view
+class TaskQuerySet(models.QuerySet):
+    def by_user(self, user):
+        return self.filter(user=user)
+
+    def by_status(self, status='all'):
+        if status == 'pending':
+            return self.filter(is_completed=False)
+        elif status == 'completed':
+            return self.filter(is_completed=True)
+        return self
+
+    def search(self, query):
+        # Q é usado para criar consultas complexas, combinando condições com OR
+        # icontains é como 'contains' mas sem diferenciar maiúsculas de minúsculas
+        if (query):
+            return self.filter(Q(title__icontains=query) | Q(description__icontains=query))
+
+        # retorna tudo se nao houver pesquisa
+        return self
+
 
 # Timestamped model usa created e modified atualizados automaticamente
 class Task(TimeStampedModel):
@@ -40,6 +64,8 @@ class Task(TimeStampedModel):
         verbose_name='Data de Conclusão'
     )
 
+    # Aqui definimos o gerenciador de objetos do modelo com o manager personalizado
+    objects = models.Manager.from_queryset(TaskQuerySet)()
     class Meta:
         ordering = ['-created']
         verbose_name = 'Tarefa'

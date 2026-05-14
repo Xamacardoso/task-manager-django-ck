@@ -17,18 +17,15 @@ class TaskListView(LoginRequiredMixin, ListView):
     context_object_name = 'tasks'           # serve para acessar o tasks no html "{% for task in tasks %}"
 
     def get_queryset(self):
-        # Apenas mostra as tarefas do usuário logado
-        queryset = Task.objects.filter(user=self.request.user)
-
         # pega o query param ?status=pending ou ?status=completed
         status = self.request.GET.get('status')
-
-        # aqui vai filtrar baseado no status
-        if status == 'pending':
-            queryset = queryset.filter(is_completed=False)
-        elif status == 'completed':
-            queryset = queryset.filter(is_completed=True)
+        search = self.request.GET.get('q', '')
         
+        # Apenas mostra as tarefas do usuário logado
+        queryset = Task.objects.by_user(self.request.user)\
+                               .by_status(status)\
+                               .search(search)
+
         return queryset
 
     def get_context_data(self, **kwargs):

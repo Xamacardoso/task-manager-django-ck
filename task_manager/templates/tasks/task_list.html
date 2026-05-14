@@ -8,6 +8,25 @@
 <div class="container mt-4">
     <h1>Lista de Tarefas</h1>
 
+    <form method="get" class="mb-4">
+        <div class="input-group">
+            {% if current_filter != 'all' %}
+                <input type="hidden" name="status" value="{{ current_filter }}">
+            {% endif %}
+
+            <input type="text" name="q" class="form-control" placeholder="Pesquisar tarefas..." value="{{ search_query }}">
+            <button type="submit" class="btn btn-primary">
+                <i class="fas fa-search me-2"></i> Pesquisar
+            </button>
+
+            {% if search_query %}
+                <a href="{% url 'tasks:task_list' %}{% if current_filter != 'all' %}?status={{ current_filter }}{% endif %}" class="btn btn-secondary">
+                    <i class="fas fa-times me-2"></i> Limpar
+                </a>
+            {% endif %}
+        </div>
+    </form>
+
     <ul class="nav nav-tabs mb-3">
         <li class="nav-item">
             <a class="nav-link {% if current_filter == 'all' %}active{% endif %}" href="{% url 'tasks:task_list' %}">Todas as tarefas</a>
