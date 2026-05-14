@@ -1,0 +1,65 @@
+{% for task in tasks %}
+<div class="list-group-item d-flex align-items-center p-3">
+    <!-- Checkbox à Esquerda -->
+    <div class="me-3">
+        <input class="form-check-input fs-4 cursor-pointer task-checkbox" 
+            type="checkbox" 
+            id="checkbox{{ task.pk }}"
+            data-url="{% url 'tasks:task_toggle_complete' task.pk %}"
+            data-task-id="{{ task.pk }}" 
+            {% if task.is_completed %}checked{% endif %}>
+    </div>
+
+    <!-- Conteúdo da Tarefa -->
+    <div class="flex-grow-1">
+        <a href="{% url 'tasks:task_update' task.pk %}" 
+           class="text-decoration-none task-title-link {% if task.is_completed %}text-muted text-decoration-line-through{% endif %}"
+           id="title{{ task.pk }}">
+            <h5 class="mb-1">{{ task.title }}</h5>
+        </a>
+        <div class="text-muted small">
+            <small>Prazo: {{ task.due_date|date:"d/m/Y"|default:"Sem Prazo" }}</small>
+            {% if task.description %}
+                <span class="mx-2">|</span> {{ task.description|truncatechars:50 }}
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Botão Excluir -->
+    <div class="ms-3">
+        <button type="button" class="btn btn-outline-danger btn-sm border-1" 
+                data-bs-toggle="modal" 
+                data-bs-target="#deleteModal{{ task.pk }}"
+                title="Excluir tarefa">
+            <i class="fas fa-trash me-2"></i> Excluir
+        </button>
+    </div>
+</div>
+
+<!-- Modal de exclusão da tarefa -->
+<div class="modal fade" id="deleteModal{{ task.pk }}" tabindex="-1" aria-labelledby="deleteModalLabel{{ task.pk }}" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="deleteModalLabel{{ task.pk }}">Deletar Tarefa</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                Tem certeza de que deseja excluir a tarefa <strong>"{{ task.title }}"</strong>?
+                Esta ação não pode ser desfeita.
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                
+                <form action="{% url 'tasks:task_delete' task.pk %}" method="POST">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-danger">Deletar</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% empty %}
+<div class="alert alert-info">Você ainda não tem nenhuma tarefa. Que tal criar uma?</div>
+{% endfor %}

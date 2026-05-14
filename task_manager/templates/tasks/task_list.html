@@ -8,14 +8,14 @@
 <div class="container mt-4">
     <h1>Lista de Tarefas</h1>
 
-    <form method="get" class="mb-4">
+    <form method="get" class="mb-4" id="search-form">
         <div class="input-group">
             {% if current_filter != 'all' %}
-                <input type="hidden" name="status" value="{{ current_filter }}">
+                <input type="hidden" name="status" id="status-filter" value="{{ current_filter }}">
             {% endif %}
 
-            <input type="text" name="q" class="form-control" placeholder="Pesquisar tarefas..." value="{{ search_query }}">
-            <button type="submit" class="btn btn-primary">
+            <input type="text" name="q" id="search-input" class="form-control" placeholder="Pesquisar tarefas..." value="{{ search_query }}">
+            <button type="submit" class="btn btn-primary" id="search-button">
                 <i class="fas fa-search me-2"></i> Pesquisar
             </button>
 
@@ -39,81 +39,17 @@
         </li>
     </ul>
 
+    <!-- Input escondido com o token de segurança para o AJAX usar -->
+    <input type="hidden" id="csrf_token_global" value="{{ csrf_token }}">
+
     <!--Lista de tarefas -->
-    <div class="list-group mt-3">
-        <!-- Input escondido com o token de segurança para o AJAX usar -->
-        <input type="hidden" id="csrf_token_global" value="{{ csrf_token }}">
-        <!-- esse for é usado para percorrer a lista de tarefas, que vem de TaskListView no arquivo views.py. o nome tasks vem do objeto 'context' retornado no get_context_data -->
-        {% for task in tasks %}
-        <div class="list-group-item d-flex align-items-center p-3">
-            <!-- Checkbox à Esquerda -->
-            <div class="me-3">
-                <input class="form-check-input fs-4 cursor-pointer task-checkbox" 
-                    type="checkbox" 
-                    id="checkbox{{ task.pk }}"
-                    data-url="{% url 'tasks:task_toggle_complete' task.pk %}"
-                    data-task-id="{{ task.pk }}" 
-                    {% if task.is_completed %}checked{% endif %}>
-            </div>
+    <div class="list-group mt-3" id="task-list-container">
+        {% include "tasks/task_list_partial.html" %}
+    </div>
 
-            <!-- Conteúdo da Tarefa -->
-            <div class="flex-grow-1">
-                <a href="{% url 'tasks:task_update' task.pk %}" 
-                   class="text-decoration-none task-title-link {% if task.is_completed %}text-muted text-decoration-line-through{% endif %}"
-                   id="title{{ task.pk }}">
-                    <h5 class="mb-1">{{ task.title }}</h5>
-                </a>
-                <div class="text-muted small">
-                    <small>Prazo: {{ task.due_date|date:"d/m/Y"|default:"Sem Prazo" }}</small>
-                    {% if task.description %}
-                        <span class="mx-2">|</span> {{ task.description|truncatechars:50 }}
-                    {% endif %}
-                </div>
-            </div>
-
-            <!-- Botão Excluir -->
-            <div class="ms-3">
-                <button type="button" class="btn btn-outline-danger btn-sm border-1" 
-                        data-bs-toggle="modal" 
-                        data-bs-target="#deleteModal{{ task.pk }}"
-                        title="Excluir tarefa">
-                    <i class="fas fa-trash me-2"></i> Excluir
-                </button>
-            </div>
-        </div>
-        
-        <!-- Modal de exclusão da tarefa -->
-        <div class="modal fade" id="deleteModal{{ task.pk }}" tabindex="-1" aria-labelledby="deleteModalLabel{{ task.pk }}" aria-hidden="true">
-            <div class="modal-dialog">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h5 class="modal-title" id="deleteModalLabel{{ task.pk }}">Deletar Tarefa</h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                    </div>
-                    <div class="modal-body">
-                        Tem certeza de que deseja excluir a tarefa <strong>"{{ task.title }}"</strong>?
-                        Esta ação não pode ser desfeita.
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                        
-                        <form action="{% url 'tasks:task_delete' task.pk %}" method="POST">
-                            {% csrf_token %}
-                            <button type="submit" class="btn btn-danger">Deletar</button>
-                        </form>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- aqui adiciona o botão de criar nova tarefa -->
-        {% empty %}
-        <div class="alert alert-info">Você ainda não tem nenhuma tarefa. Que tal criar uma?</div>
-        {% endfor %}
-
-        <div class="mt-4">
-            <a href="{% url 'tasks:task_create' %}" class="btn btn-primary">Criar Nova Tarefa</a>
-        </div>
+    <div class="mt-4">
+        <a href="{% url 'tasks:task_create' %}" class="btn btn-primary">Criar Nova Tarefa</a>
+    </div>
 </div>
 
 <script>
@@ -160,49 +96,106 @@ document.addEventListener("DOMContentLoaded", function() {
         newToastEl.addEventListener('hidden.bs.toast', () => newToastEl.remove());
     }
 
-    // Adiciona o evento de clique em todas as checkboxes
-    const checkboxes = document.querySelectorAll('.task-checkbox');
-    checkboxes.forEach(checkbox => {
-        checkbox.addEventListener('change', function() {
-            const url = this.getAttribute('data-url');
-            const taskId = this.getAttribute('data-task-id');
-            const isChecked = this.checked;
+    // --- LÓGICA DE PESQUISA EM TEMPO REAL ---
+    const searchInput = document.getElementById('search-input');
+    const taskListContainer = document.getElementById('task-list-container');
+    const searchForm = document.getElementById('search-form');
+    let debounceTimer;
 
-            // Faz a requisição AJAX no fundo
-            fetch(url, {
-                method: 'POST',
-                headers: {
-                    'X-CSRFToken': document.getElementById('csrf_token_global').value,
-                    'Accept': 'application/json',
-                },
-            })
-            .then(response => {
-                if (!response.ok) throw new Error('Erro no servidor');
-                return response.json();
-            })
-            .then(data => {
-                if (data.status === 'success') {
-                    // Atualiza o visual do título (riscado/normal)
-                    const titleLink = document.querySelector(`#title${taskId}`);
-                    if (data.is_completed) {
-                        titleLink.classList.add('text-muted', 'text-decoration-line-through');
-                    } else {
-                        titleLink.classList.remove('text-muted', 'text-decoration-line-through');
-                    }
-                    
-                    // Exibe a notificação na tela
-                    showDynamicToast(data.message, 'success');
+    if (searchInput) {
+        searchInput.addEventListener('input', function() {
+            clearTimeout(debounceTimer);
+            const query = this.value;
+            const status = document.getElementById('status-filter')?.value || 'all';
+
+            // Aguarda 300ms após o usuário parar de digitar para fazer a busca
+            debounceTimer = setTimeout(() => {
+                const url = new URL(window.location.href);
+                url.searchParams.set('q', query);
+                if (status !== 'all') {
+                    url.searchParams.set('status', status);
                 } else {
-                    this.checked = !isChecked; // Desfaz o clique se der erro
+                    url.searchParams.delete('status');
                 }
-            })
-            .catch(error => {
-                console.error('Erro na requisição:', error);
-                this.checked = !isChecked; // Desfaz o clique se a internet cair
-                showDynamicToast('Erro de conexão ao atualizar a tarefa.', 'error');
+
+                // Adiciona um efeito visual de carregamento
+                taskListContainer.style.opacity = '0.2';
+
+                fetch(url, {
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                })
+                .then(response => response.text())
+                .then(html => {
+                    // Atualiza o conteúdo da lista (o view já retorna apenas o parcial)
+                    taskListContainer.innerHTML = html;
+                    taskListContainer.style.opacity = '1';
+                    
+                    // Re-vincula os eventos das checkboxes, pois o HTML foi substituído
+                    bindCheckboxEvents();
+                    
+                    // Atualiza a URL no navegador sem recarregar a página
+                    window.history.pushState({}, '', url);
+                })
+                .catch(error => {
+                    console.error('Erro na pesquisa:', error);
+                    taskListContainer.style.opacity = '1';
+                });
+            }, 300);
+        });
+
+        // Evita que o formulário recarregue a página ao apertar Enter
+        searchForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+        });
+    }
+
+    // Função para vincular eventos de checkbox (separada para ser re-chamada após o AJAX)
+    function bindCheckboxEvents() {
+        const checkboxes = document.querySelectorAll('.task-checkbox');
+        checkboxes.forEach(checkbox => {
+            // Remove evento anterior para não duplicar se necessário (embora o elemento seja novo)
+            checkbox.addEventListener('change', function() {
+                const url = this.getAttribute('data-url');
+                const taskId = this.getAttribute('data-task-id');
+                const isChecked = this.checked;
+
+                fetch(url, {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': document.getElementById('csrf_token_global').value,
+                        'Accept': 'application/json',
+                    },
+                })
+                .then(response => {
+                    if (!response.ok) throw new Error('Erro no servidor');
+                    return response.json();
+                })
+                .then(data => {
+                    if (data.status === 'success') {
+                        const titleLink = document.querySelector(`#title${taskId}`);
+                        if (data.is_completed) {
+                            titleLink.classList.add('text-muted', 'text-decoration-line-through');
+                        } else {
+                            titleLink.classList.remove('text-muted', 'text-decoration-line-through');
+                        }
+                        showDynamicToast(data.message, 'success');
+                    } else {
+                        this.checked = !isChecked;
+                    }
+                })
+                .catch(error => {
+                    console.error('Erro na requisição:', error);
+                    this.checked = !isChecked;
+                    showDynamicToast('Erro de conexão ao atualizar a tarefa.', 'error');
+                });
             });
         });
-    });
+    }
+
+    // Inicializa os eventos na primeira carga
+    bindCheckboxEvents();
 });
 </script>
 {% endblock content %}

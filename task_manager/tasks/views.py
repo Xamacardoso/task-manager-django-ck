@@ -31,7 +31,16 @@ class TaskListView(LoginRequiredMixin, ListView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['current_filter'] = self.request.GET.get('status', 'all')
+        context['search_query'] = self.request.GET.get('q', '')
         return context
+
+    # render_to_response é chamada toda vez que a view vai retornar algo. nesse caso
+    # checamos se o pedido foi feito por ajax, se sim, retorna só a parte que interessa pro 
+    # javascritp atualizar sem precisar recarregar a pagina inteira (caso da pesquisa na barra)
+    def render_to_response(self, context, **response_kwargs):
+        if self.request.headers.get('x-requested-with') == 'XMLHttpRequest':
+            self.template_name = 'tasks/task_list_partial.html'
+        return super().render_to_response(context, **response_kwargs)
 
 class TaskCreateView(LoginRequiredMixin, SuccessMessageMixin, CreateView):
     model = Task
