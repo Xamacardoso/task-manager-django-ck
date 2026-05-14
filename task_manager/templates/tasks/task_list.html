@@ -9,26 +9,43 @@
     <h1>Lista de Tarefas</h1>
 
     <div class="list-group mt-3">
+        <!-- Input escondido com o token de segurança para o AJAX usar -->
+        <input type="hidden" id="csrf_token_global" value="{{ csrf_token }}">
         <!-- esse for é usado para percorrer a lista de tarefas, que vem de TaskListView no arquivo views.py. o nome tasks vem do objeto 'context' retornado no get_context_data -->
         {% for task in tasks %}
-        <div class="list-group-item d-flex justify-content-between align-items-center">
-            <div>
-                <a href="{% url 'tasks:task_update' task.pk %}" class="text-decoration-none">
-                    <h5 class="mb-1">{{ task.title }}</h5>
-                </a>
-                <small class="text-muted">Prazo: {{ task.due_date|date:"d/m/Y"|default:"Sem Prazo" }}</small>
-                <p class="mb-1">{{ task.description }}</p>
+        <div class="list-group-item d-flex align-items-center p-3">
+            <!-- Checkbox à Esquerda -->
+            <div class="me-3">
+                <input class="form-check-input fs-4 cursor-pointer task-checkbox" 
+                    type="checkbox" 
+                    id="checkbox{{ task.pk }}"
+                    data-url="{% url 'tasks:task_toggle_complete' task.pk %}"
+                    data-task-id="{{ task.pk }}" 
+                    {% if task.is_completed %}checked{% endif %}>
             </div>
 
-            <div>
-                {% if task.is_completed %}
-                    <span class="badge bg-success rounded-pill">Concluída</span>
-                {% else %}
-                    <span class="badge bg-warning text-dark rounded-pill">Pendente</span>
-                {% endif %}
+            <!-- Conteúdo da Tarefa -->
+            <div class="flex-grow-1">
+                <a href="{% url 'tasks:task_update' task.pk %}" 
+                   class="text-decoration-none task-title-link {% if task.is_completed %}text-muted text-decoration-line-through{% endif %}"
+                   id="title{{ task.pk }}">
+                    <h5 class="mb-1">{{ task.title }}</h5>
+                </a>
+                <div class="text-muted small">
+                    <small>Prazo: {{ task.due_date|date:"d/m/Y"|default:"Sem Prazo" }}</small>
+                    {% if task.description %}
+                        <span class="mx-2">|</span> {{ task.description|truncatechars:50 }}
+                    {% endif %}
+                </div>
+            </div>
 
-                <button class="btn btn-danger btn-sm" data-bs-toggle="modal" data-bs-target="#deleteModal{{ task.pk }}">
-                    <i class="fa fa-trash"></i> Excluir
+            <!-- Botão Excluir -->
+            <div class="ms-3">
+                <button type="button" class="btn btn-outline-danger btn-sm border-1" 
+                        data-bs-toggle="modal" 
+                        data-bs-target="#deleteModal{{ task.pk }}"
+                        title="Excluir tarefa">
+                    <i class="fas fa-trash me-2"></i> Excluir
                 </button>
             </div>
         </div>
@@ -65,4 +82,94 @@
             <a href="{% url 'tasks:task_create' %}" class="btn btn-primary">Criar Nova Tarefa</a>
         </div>
 </div>
+
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+    
+    // Função padrão do Django para pegar o Token de Segurança (CSRF) dos cookies
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+
+    // Função para criar um Toast na tela via JavaScript
+    function showDynamicToast(message, type) {
+        const toastContainer = document.querySelector('.toast-container');
+        if (!toastContainer) return;
+
+        const bgClass = type === 'success' ? 'bg-success' : 'bg-danger';
+        const icon = type === 'success' ? '<i class="fas fa-check-circle me-2"></i>' : '';
+
+        const toastHTML = `
+            <div class="toast align-items-center text-white ${bgClass} border-0" role="alert" aria-live="assertive" aria-atomic="true">
+                <div class="d-flex">
+                    <div class="toast-body">${icon} ${message}</div>
+                    <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Fechar"></button>
+                </div>
+            </div>`;
+            
+        toastContainer.insertAdjacentHTML('beforeend', toastHTML);
+        const newToastEl = toastContainer.lastElementChild;
+        const toast = new bootstrap.Toast(newToastEl, { delay: 3000 });
+        toast.show();
+
+        // Limpa o HTML do toast depois que ele some
+        newToastEl.addEventListener('hidden.bs.toast', () => newToastEl.remove());
+    }
+
+    // Adiciona o evento de clique em todas as checkboxes
+    const checkboxes = document.querySelectorAll('.task-checkbox');
+    checkboxes.forEach(checkbox => {
+        checkbox.addEventListener('change', function() {
+            const url = this.getAttribute('data-url');
+            const taskId = this.getAttribute('data-task-id');
+            const isChecked = this.checked;
+
+            // Faz a requisição AJAX no fundo
+            fetch(url, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': document.getElementById('csrf_token_global').value,
+                    'Accept': 'application/json',
+                },
+            })
+            .then(response => {
+                if (!response.ok) throw new Error('Erro no servidor');
+                return response.json();
+            })
+            .then(data => {
+                if (data.status === 'success') {
+                    // Atualiza o visual do título (riscado/normal)
+                    const titleLink = document.querySelector(`#title${taskId}`);
+                    if (data.is_completed) {
+                        titleLink.classList.add('text-muted', 'text-decoration-line-through');
+                    } else {
+                        titleLink.classList.remove('text-muted', 'text-decoration-line-through');
+                    }
+                    
+                    // Exibe a notificação na tela
+                    showDynamicToast(data.message, 'success');
+                } else {
+                    this.checked = !isChecked; // Desfaz o clique se der erro
+                }
+            })
+            .catch(error => {
+                console.error('Erro na requisição:', error);
+                this.checked = !isChecked; // Desfaz o clique se a internet cair
+                showDynamicToast('Erro de conexão ao atualizar a tarefa.', 'error');
+            });
+        });
+    });
+});
+</script>
 {% endblock content %}
