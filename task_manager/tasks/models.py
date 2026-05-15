@@ -2,6 +2,7 @@ from django.conf import settings
 from django.db import models
 from django.utils import timezone
 from django.db.models import Q
+from django.utils import timezone
 
 from model_utils.models import TimeStampedModel
 
@@ -26,6 +27,13 @@ class TaskQuerySet(models.QuerySet):
         # retorna tudo se nao houver pesquisa
         return self
 
+    def get_stats(self):
+        return {
+            'total': self.count(),
+            'pending': self.filter(is_completed=False).count(),
+            'completed': self.filter(is_completed=True).count(),
+            'overdue': self.filter(is_completed=False, due_date__lt=timezone.now()).count(),
+        }
 
 # Timestamped model usa created e modified atualizados automaticamente
 class Task(TimeStampedModel):

@@ -9,39 +9,8 @@
     <h1>Lista de Tarefas</h1>
 
     <!-- cards para mostrar dados do dashboard -->
-    <div class="row mb-4 mt-3">
-        <div class="col-md-3 col-sm-6 mb-3">
-            <div class="card text-white bg-primary h-100 shadow-sm border-0">
-                <div class="card-body">
-                    <h6 class="card-title text-uppercase fw-bold"><i class="fas fa-list me-2"></i> Total</h6>
-                    <h2 class="card-text display-6">{{ total_tasks|default:"0" }}</h2>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-3 col-sm-6 mb-3">
-            <div class="card text-white bg-success h-100 shadow-sm border-0">
-                <div class="card-body">
-                    <h6 class="card-title text-uppercase fw-bold"><i class="fas fa-check-circle me-2"></i> Concluídas</h6>
-                    <h2 class="card-text display-6">{{ completed_tasks|default:"0" }}</h2>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-3 col-sm-6 mb-3">
-            <div class="card text-dark bg-warning h-100 shadow-sm border-0">
-                <div class="card-body">
-                    <h6 class="card-title text-uppercase fw-bold"><i class="fas fa-clock me-2"></i> Pendentes</h6>
-                    <h2 class="card-text display-6">{{ pending_tasks|default:"0" }}</h2>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-3 col-sm-6 mb-3">
-            <div class="card text-white bg-danger h-100 shadow-sm border-0">
-                <div class="card-body">
-                    <h6 class="card-title text-uppercase fw-bold"><i class="fas fa-exclamation-triangle me-2"></i> Atrasadas</h6>
-                    <h2 class="card-text display-6">{{ overdue_tasks|default:"0" }}</h2>
-                </div>
-            </div>
-        </div>
+    <div id="stats-container">
+        {% include "tasks/task_stats_partial.html" %}
     </div>
 
     <!-- Barra de pesquisa -->
@@ -130,9 +99,39 @@ document.addEventListener("DOMContentLoaded", function() {
         const toast = new bootstrap.Toast(newToastEl, { delay: 3000 });
         toast.show();
 
-        // Limpa o HTML do toast depois que ele some
-        newToastEl.addEventListener('hidden.bs.toast', () => newToastEl.remove());
+    // Limpa o HTML do toast depois que ele some
+    newToastEl.addEventListener('hidden.bs.toast', () => newToastEl.remove());
+}
+
+// Função para atualizar os cards de estatísticas dinamicamente
+// Recebe um objeto 'stats' com as chaves: total, completed, pending, overdue
+function updateTaskStats(stats) {
+    if (!stats) return;
+
+    const elements = {
+        'total': document.getElementById('total-tasks-count'),
+        'completed': document.getElementById('completed-tasks-count'),
+        'pending': document.getElementById('pending-tasks-count'),
+        'overdue': document.getElementById('overdue-tasks-count')
+    };
+
+    // Itera sobre os elementos e atualiza o texto com animação simples
+    for (const [key, element] of Object.entries(elements)) {
+        if (element && stats[key] !== undefined) {
+            // Só atualiza se o valor mudou
+            if (element.innerText !== stats[key].toString()) {
+                element.innerText = stats[key];
+                
+                // Adiciona um pequeno efeito visual de pulso na atualização
+                element.style.transition = 'transform 0.2s ease-in-out';
+                element.style.transform = 'scale(1.1)';
+                setTimeout(() => {
+                    element.style.transform = 'scale(1)';
+                }, 200);
+            }
+        }
     }
+}
 
     // --- LÓGICA DE PESQUISA EM TEMPO REAL ---
     const searchInput = document.getElementById('search-input');
@@ -221,6 +220,11 @@ document.addEventListener("DOMContentLoaded", function() {
                             titleLink.classList.remove('text-muted', 'text-decoration-line-through');
                         }
                         showDynamicToast(data.message, 'success');
+                        
+                        // Atualiza as estatísticas no topo da página
+                        if (data.stats) {
+                            updateTaskStats(data.stats);
+                        }
                     } else {
                         this.checked = !isChecked;
                     }

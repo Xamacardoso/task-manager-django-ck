@@ -1,0 +1,34 @@
+<div class="row mb-4 mt-3">
+    <div class="col-md-3 col-sm-6 mb-3">
+        <div class="card text-white bg-primary h-100 shadow-sm border-0">
+            <div class="card-body">
+                <h6 class="card-title text-uppercase fw-bold"><i class="fas fa-list me-2"></i> Total</h6>
+                <h2 class="card-text display-6" id="total-tasks-count">{{ total_tasks|default:"0" }}</h2>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 col-sm-6 mb-3">
+        <div class="card text-white bg-success h-100 shadow-sm border-0">
+            <div class="card-body">
+                <h6 class="card-title text-uppercase fw-bold"><i class="fas fa-check-circle me-2"></i> Concluídas</h6>
+                <h2 class="card-text display-6" id="completed-tasks-count">{{ completed_tasks|default:"0" }}</h2>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 col-sm-6 mb-3">
+        <div class="card text-dark bg-warning h-100 shadow-sm border-0">
+            <div class="card-body">
+                <h6 class="card-title text-uppercase fw-bold"><i class="fas fa-clock me-2"></i> Pendentes</h6>
+                <h2 class="card-text display-6" id="pending-tasks-count">{{ pending_tasks|default:"0" }}</h2>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 col-sm-6 mb-3">
+        <div class="card text-white bg-danger h-100 shadow-sm border-0">
+            <div class="card-body">
+                <h6 class="card-title text-uppercase fw-bold"><i class="fas fa-exclamation-triangle me-2"></i> Atrasadas</h6>
+                <h2 class="card-text display-6" id="overdue-tasks-count">{{ overdue_tasks|default:"0" }}</h2>
+            </div>
+        </div>
+    </div>
+</div>

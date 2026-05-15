@@ -7,8 +7,6 @@ from django.views import View
 from django.shortcuts import get_object_or_404, redirect
 
 from django.http import JsonResponse
-from django.utils import timezone
-
 
 from .models import Task
 from .forms import TaskForm
@@ -40,15 +38,12 @@ class TaskListView(LoginRequiredMixin, ListView):
         # logica do dashboard para mostrar dados de tasks
         # pega as tasks do model baseado no usuario logado. pegando diretamente do model
         # pois ele ja tem o filtro de usuario
-        user_tasks = Task.objects.by_user(self.request.user)
+        user_tasks_stats = Task.objects.by_user(self.request.user).get_stats()
 
-        context['total_tasks'] = user_tasks.count()
-        context['completed_tasks'] = user_tasks.filter(is_completed=True).count()
-        context['pending_tasks'] = user_tasks.filter(is_completed=False).count()
-
-        #  o lt é less than, ou seja, menor que o dia de hoje. 
-        #  ai filtra tarefas com prazo menor que o dia de hoje e que não estão concluídas
-        context['overdue_tasks'] = user_tasks.filter(is_completed=False, due_date__lt=timezone.now()).count()
+        context['total_tasks'] = user_tasks_stats['total']
+        context['completed_tasks'] = user_tasks_stats['completed']
+        context['pending_tasks'] = user_tasks_stats['pending']
+        context['overdue_tasks'] = user_tasks_stats['overdue']
 
         return context
 
@@ -130,10 +125,13 @@ class TaskToggleCompleteView(LoginRequiredMixin, View):
         # verifica se o pedido foi feito por javascript (ajax)
         accept_header = request.headers.get('Accept', '')
         if 'application/json' in accept_header:
+            stats = Task.objects.by_user(request.user).get_stats()
+            
             return JsonResponse({
                 'message': f'Tarefa marcada como {estado}!',
                 'is_completed': task.is_completed,
-                'status': 'success'
+                'status': 'success',
+                'stats': stats
             })
 
 
