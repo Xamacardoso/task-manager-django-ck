@@ -7,6 +7,8 @@ from django.views import View
 from django.shortcuts import get_object_or_404, redirect
 
 from django.http import JsonResponse
+from django.utils import timezone
+
 
 from .models import Task
 from .forms import TaskForm
@@ -29,10 +31,25 @@ class TaskListView(LoginRequiredMixin, ListView):
 
         return queryset
 
+    # get context acontece quando o html vai ser carregado
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['current_filter'] = self.request.GET.get('status', 'all')
         context['search_query'] = self.request.GET.get('q', '')
+        
+        # logica do dashboard para mostrar dados de tasks
+        # pega as tasks do model baseado no usuario logado. pegando diretamente do model
+        # pois ele ja tem o filtro de usuario
+        user_tasks = Task.objects.by_user(self.request.user)
+
+        context['total_tasks'] = user_tasks.count()
+        context['completed_tasks'] = user_tasks.filter(is_completed=True).count()
+        context['pending_tasks'] = user_tasks.filter(is_completed=False).count()
+
+        #  o lt é less than, ou seja, menor que o dia de hoje. 
+        #  ai filtra tarefas com prazo menor que o dia de hoje e que não estão concluídas
+        context['overdue_tasks'] = user_tasks.filter(is_completed=False, due_date__lt=timezone.now()).count()
+
         return context
 
     # render_to_response é chamada toda vez que a view vai retornar algo. nesse caso
