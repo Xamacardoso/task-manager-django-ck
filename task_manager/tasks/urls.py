@@ -1,8 +1,13 @@
-from task_manager.tasks.views import TaskToggleCompleteView
 from django.urls import path
 
-from task_manager.tasks.views import TaskDeleteView, TaskUpdateView, TaskCreateView, TaskListView
-
+from task_manager.tasks.views import (
+    TaskListView,
+    TaskCreateView,
+    TaskUpdateView,
+    TaskDeleteView,
+    TaskToggleCompleteView,
+    TaskExportView
+)
 
 app_name = "tasks"
 urlpatterns = [
@@ -12,4 +17,6 @@ urlpatterns = [
     path('<int:pk>/delete/', TaskDeleteView.as_view(), name='task_delete'),
 
     path('<int:pk>/toggle/', TaskToggleCompleteView.as_view(), name='task_toggle_complete'),
+
+    path('export/', TaskExportView.as_view(), name='task_export'),
 ]
