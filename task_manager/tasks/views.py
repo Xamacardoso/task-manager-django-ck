@@ -10,6 +10,7 @@ from django.http import JsonResponse
 
 from .models import Task
 from .forms import TaskForm
+from .tasks import export_tasks_report
 
 class TaskListView(LoginRequiredMixin, ListView):
     model = Task
@@ -137,4 +138,15 @@ class TaskToggleCompleteView(LoginRequiredMixin, View):
 
         messages.success(request, f'Tarefa marcada como {estado}!')
         return redirect('tasks:task_list')
+
+class TaskExportView(LoginRequiredMixin, View):
+    def get(self, request):
+        try:
+            # .delay indica que a função vai ser executada em segundo plano
+            export_tasks_report.delay(request.user.id, request.user.email)
+            messages.info(request, 'Gerando relatório! Verifique sua caixa de e-mail em instantes')
+            return redirect('tasks:task_list')
+        except Exception as e:
+            messages.error(request, f'Erro ao gerar relatório: {str(e)}')
+            return redirect('tasks:task_list')
 

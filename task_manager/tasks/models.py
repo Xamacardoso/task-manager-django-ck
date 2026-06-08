@@ -74,6 +74,7 @@ class Task(TimeStampedModel):
 
     # Aqui definimos o gerenciador de objetos do modelo com o manager personalizado
     objects = models.Manager.from_queryset(TaskQuerySet)()
+    
     class Meta:
         ordering = ['-created']
         verbose_name = 'Tarefa'
