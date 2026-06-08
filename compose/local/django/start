@@ -6,4 +6,6 @@ set -o nounset
 
 
 python manage.py migrate
-exec python manage.py runserver_plus 0.0.0.0:8000
+
+# Usa o watchfiles para monitorar arquivos .py e .html e reiniciar o servidor automaticamente
+exec watchfiles "python manage.py runserver_plus 0.0.0.0:8000 --reloader-type stat"

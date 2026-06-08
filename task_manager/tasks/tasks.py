@@ -19,14 +19,13 @@ def export_tasks_report (user_id, user_email):
         writer = csv.writer(buffer)
 
         # escreve o cabeçalho
-        writer.writerow(['ID', 'Título', 'Descrição', 'Data de Prazo', 'Status'])
+        writer.writerow(['Título', 'Descrição', 'Prazo', 'Status'])
 
         # adiciona cada tarefa ao csv
         for task in tasks:
             status = 'Concluida' if task.is_completed else 'Pendente'
             prazo = task.due_date.strftime('%d/%m/%Y %H:%M') if task.due_date else 'Sem Prazo'
             writer.writerow([
-                task.id,
                 task.title,
                 task.description,
                 prazo,
