@@ -1,6 +1,6 @@
 
 # define an alias for the specific python version used in this file.
-FROM docker.io/python:3.10.15-slim-bookworm AS python-build-stage
+FROM docker.io/python:3.10.20-slim-bookworm AS python-build-stage
 
 ENV UV_COMPILE_BYTECODE=1 UV_LINK_MODE=copy UV_PYTHON_DOWNLOADS=0
 
@@ -29,7 +29,7 @@ RUN --mount=type=cache,target=/root/.cache/uv \
     uv sync --locked --no-dev
 
 # Python 'run' stage
-FROM docker.io/python:3.10.15-slim-bookworm AS python-run-stage
+FROM docker.io/python:3.10.20-slim-bookworm AS python-run-stage
 
 ARG APP_HOME=/app
 
