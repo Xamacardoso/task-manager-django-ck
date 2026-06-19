@@ -11,15 +11,15 @@ flower==1.2.0  # https://github.com/mher/flower
 
 # Django
 # ------------------------------------------------------------------------------
-django~=4.2  # https://www.djangoproject.com/
-django-environ==0.12.0  # https://github.com/joke2k/django-environ
+django~=6.0  # https://www.djangoproject.com/
+django-environ==0.14.0  # https://github.com/joke2k/django-environ
 django-model-utils==4.3.1  # https://github.com/jazzband/django-model-utils
 django-allauth[mfa]==0.60.0  # https://github.com/pennersr/django-allauth
 django-crispy-forms==2.0  # https://github.com/django-crispy-forms/django-crispy-forms
 crispy-bootstrap5==0.7  # https://github.com/django-crispy-forms/crispy-bootstrap5
 django-redis==5.2.0  # https://github.com/jazzband/django-redis
-django-sesame==3.1  # https://github.com/aaugustin/django-sesame
-django-celery-results==2.5.0  # https://github.com/celery/django-celery-results
+django-sesame==3.2.3  # https://github.com/aaugustin/django-sesame
+django-celery-results==2.6.0  # https://github.com/celery/django-celery-results
 
 # CPF validator
 # ------------------------------------------------------------------------------
